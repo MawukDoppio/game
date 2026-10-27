@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Моя піксельна гра</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #241b2f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: monospace;
+    color: white;
+  }
+
+  .game {
+    text-align: center;
+  }
+
+  canvas {
+    width: 640px;
+    height: 480px;
+    max-width: 95vw;
+    max-height: 75vh;
+    background: #b9a7a0;
+    border: 4px solid #493344;
+    image-rendering: pixelated;
+  }
+</style>
+</head>
+
+<body>
+<div class="game">
+  <h2>Сімулятор широкой Ольгі</h2>
+  <canvas id="game" width="320" height="240"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Завантажуємо чотири спрайти
+const sprites = {
+  down: new Image(),
+  up: new Image(),
+  left: new Image(),
+  right: new Image()
+};
+
+sprites.down.src = "OlhaStand.png";
+sprites.right.src = "OlhaRight.png";
+sprites.left.src = "OlhaLeft.png";
+sprites.up.src = "OlhaBack.png";
+
+// Позиція персонажки
+let x = 144;
+let y = 96;
+const speed = 1.5;
+
+// Напрямок, у який вона дивиться
+let direction = "down";
+
+// Натиснуті клавіші
+const keys = {};
+
+document.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+
+  if (["w", "a", "s", "d"].includes(key)) {
+    e.preventDefault();
+    keys[key] = true;
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// Якщо гравець перемкнув вікно,
+// припиняємо рух персонажки
+window.addEventListener("blur", () => {
+  for (const key in keys) {
+    keys[key] = false;
+  }
+});
+
+function update() {
+  let dx = 0;
+  let dy = 0;
+
+  if (keys["w"]) dy--;
+  if (keys["s"]) dy++;
+  if (keys["a"]) dx--;
+  if (keys["d"]) dx++;
+
+  if (dx !== 0 || dy !== 0) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      direction = dx < 0 ? "left" : "right";
+    } else {
+      direction = dy < 0 ? "up" : "down";
+    }
+
+    // Діагональний рух не швидший
+    const length = Math.hypot(dx, dy);
+    x += (dx / length) * speed;
+    y += (dy / length) * speed;
+  }
+
+  // Не дозволяємо вийти за межі поля
+  const img = sprites[direction];
+  const w = img.naturalWidth || 32;
+  const h = img.naturalHeight || 48;
+
+  x = Math.max(0, Math.min(canvas.width - w, x));
+  y = Math.max(0, Math.min(canvas.height - h, y));
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Простий фон
+  ctx.fillStyle = "#b9a7a0";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Малюємо персонажку без згладжування
+  const img = sprites[direction];
+
+  if (img.complete && img.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, Math.round(x), Math.round(y));
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function loop() {
+  update();
+  draw();
+}
+
+loop();
+</script>
+</body>
+</html>
